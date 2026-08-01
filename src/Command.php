@@ -12,7 +12,7 @@ abstract class Command extends \Symfony\Component\Console\Command\Command
 {
     abstract protected function doExecute(InputInterface $input, OutputInterface $output): void;
 
-    final public function execute(InputInterface $input, OutputInterface $output)
+    final public function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $this->doExecute($input, $output);
@@ -26,7 +26,9 @@ abstract class Command extends \Symfony\Component\Console\Command\Command
             $output->writeln($exception->getMessage());
             $output->writeln($exception->getTraceAsString(), OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_VERBOSE);
 
-            return $exception->getCode() == 0 ? 1 : $exception->getCode();
+            $exitCode = (int) $exception->getCode();
+
+            return 0 === $exitCode ? 1 : $exitCode;
         }
     }
 }

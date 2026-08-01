@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: PHP ${{ matrix.php }} / symfony-console ${{ matrix.console }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { php: '7.2', console: '5.0.*' }
+          - { php: '7.3', console: '5.2.*' }
+          - { php: '7.4', console: '5.4.*' }
+          - { php: '8.0', console: '5.4.*' }
+          - { php: '8.0', console: '6.0.*' }
+          - { php: '8.1', console: '6.4.*' }
+          - { php: '8.2', console: '6.4.*' }
+          - { php: '8.2', console: '7.0.*' }
+          - { php: '8.3', console: '7.4.*' }
+          - { php: '8.4', console: '7.4.*' }
+          - { php: '8.4', console: '8.0.*' }
+          - { php: '8.5', console: '8.1.*' }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+
+      - name: Pin symfony/console to ${{ matrix.console }}
+        run: composer require --no-update symfony/console:"${{ matrix.console }}"
+
+      - name: Install dependencies
+        run: composer update --no-interaction --no-progress --prefer-dist
+
+      - name: Run tests
+        run: vendor/bin/phpunit
+
+  validate:
+    name: Validate composer.json
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
+
+      - run: composer validate --strict
